@@ -1,0 +1,72 @@
+rules:
+  - id: "DAG-GEN-001"
+    name: "Hardcoded GCP Project ID"
+    type: "regex"
+    extensions: [".py", ".json", ".sh", ".sql"]
+    pattern: '(?i)(project_id\s*[:=]\s*[''"][a-z0-9-]+[''"]|--project[= ][''"]?[a-z0-9-]+[''"]?)'
+    
+  - id: "DAG-GEN-002"
+    name: "Hardcoded Region/Location"
+    type: "regex"
+    extensions: [".py", ".json", ".sh", ".sql"]
+    pattern: '(?i)([''"](us-central1|us-east4|europe-west1|asia-south1|us-west1)[''"]|--location[= ][''"]?[a-z]+-[a-z]+[0-9][''"]?)'
+
+  - id: "DAG-GEN-003"
+    name: "Hardcoded GCS URI"
+    type: "regex"
+    extensions: [".py", ".sql", ".sh", ".json"]
+    pattern: '(?i)(gs://[a-z0-9_\.-]+)'
+
+  - id: "DAG-BQ-001"
+    name: "Fully Qualified BQ Tables / Datasets"
+    type: "regex"
+    extensions: [".py", ".sql", ".sh", ".json"]
+    pattern: '(?i)(`[a-z0-9-]+`\.`[a-z0-9_]+`\.`[a-z0-9_]+`|^(?!.*\bimport\b).*(?:FROM|JOIN|INTO|UPDATE|TABLE)\s+[''"]?[a-z0-9-]+\.[a-z0-9_]+\.[a-z0-9_]+[''"]?)'
+
+  - id: "DAG-BQ-002"
+    name: "Region-Scoped SQL Metadata"
+    type: "regex"
+    extensions: [".sql", ".py"]
+    pattern: '(?i)(region-[a-z0-9]+\.INFORMATION_SCHEMA)'
+
+  - id: "DAG-KMS-001"
+    name: "Hardcoded KMS Resource Path"
+    type: "regex"
+    extensions: [".py", ".json", ".sh"]
+    pattern: '(?i)(projects/[^/]+/locations/[^/]+/keyRings/[^/]+/cryptoKeys/[^/''"]+)'
+
+  - id: "DAG-PY-001"
+    name: "Top-Level Variable.get() usage"
+    type: "ast"
+    extensions: [".py"]
+    ast_check: "top_level_variable"
+
+  - id: "DAG-PY-002"
+    name: "Early GCP Client Initialization"
+    type: "ast"
+    extensions: [".py"]
+    ast_check: "early_client_init"
+
+  - id: "DAG-PY-003"
+    name: "Hardcoded Env Fallback (os.getenv)"
+    type: "regex"
+    extensions: [".py"]
+    pattern: '(?i)(os\.environ\.get|os\.getenv)\([^,]+,\s*[''"](prod|us-central1|us-east4)[''"]\)'
+
+  - id: "DAG-SEC-001"
+    name: "Hardcoded Secret Manager Path"
+    type: "regex"
+    extensions: [".py", ".json", ".sh"]
+    pattern: '(?i)(projects/[^/]+/secrets/[^/]+)'
+
+  - id: "DAG-SVR-001"
+    name: "Hardcoded Cloud Run Function URL"
+    type: "regex"
+    extensions: [".py", ".json", ".sh"]
+    pattern: '(?i)(https://[a-z0-9-]+-[a-z0-9]+\.a\.run\.app)'
+
+  - id: "DAG-ENV-001"
+    name: "Hardcoded Composer Environment Name"
+    type: "regex"
+    extensions: [".py", ".json", ".sh"]
+    pattern: '(?i)(environments/[a-z0-9-]+)'

@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: gcp-dag-validator
+        name: GCP DAG Compliance Validator
+        description: Scans local Airflow DAGs, SQL, and configs for hardcoded GCP DR vulnerabilities.
+        entry: gcp-dag-validator
+        language: system
+        types_or: [python, sql, shell, json]
+        require_serial: false
