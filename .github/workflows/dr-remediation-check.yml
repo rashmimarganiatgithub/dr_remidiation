@@ -18,11 +18,13 @@ permissions:
 concurrency:
   group: dr-remediation-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
- 
 jobs:
   dr-scan:
     name: Scan for DR blockers
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash # Directs GitHub to use Git Bash instead of PowerShell
     if: github.event.pull_request.draft != true
  
     steps:
