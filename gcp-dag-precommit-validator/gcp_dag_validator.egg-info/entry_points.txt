@@ -1,2 +1,0 @@
-[console_scripts]
-gcp-dag-validator = gcp_dag_validator.cli:main

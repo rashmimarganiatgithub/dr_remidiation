@@ -1,9 +1,0 @@
-Metadata-Version: 2.4
-Name: gcp-dag-validator
-Version: 2.1.6
-Summary: Pre-commit hook for GCP DAG Disaster Recovery Compliance
-Author: Data Engineering Team
-Requires-Dist: pyyaml>=6.0
-Dynamic: author
-Dynamic: requires-dist
-Dynamic: summary

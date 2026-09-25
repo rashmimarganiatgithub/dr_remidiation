@@ -1,0 +1,114 @@
+name: DR Code Remediation Check
+ 
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main, master, develop, release/**]
+  workflow_dispatch:
+    inputs:
+      scan_path:
+        description: "Path to scan (default: full repo)"
+        required: false
+        default: "."
+ 
+permissions:
+  contents: read
+  pull-requests: write
+ 
+concurrency:
+  group: dr-remediation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+ 
+jobs:
+  dr-scan:
+    name: Scan for DR blockers
+    runs-on: windows-latest
+    if: github.event.pull_request.draft != true
+ 
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+ 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+ 
+      - name: Verify scanner is present
+        run: |
+          test -f .github/skills/dr-code-remediation/scripts/dr_scan.py \
+            || { echo "::error::DR scanner missing at .github/skills/dr-code-remediation/scripts/dr_scan.py"; exit 2; }
+ 
+      - name: Compute changed files
+        id: changed
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          head_sha="${{ github.event.pull_request.head.sha }}"
+          git fetch --no-tags --depth=200 origin "$base_sha" "$head_sha" || true
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMRT "$base_sha"..."$head_sha" \
+            | grep -E '\.(py|sql|sh|json|ya?ml|tf)$' || true)
+          printf '%s\n' "${files[@]}" > changed_files.txt
+          echo "count=${#files[@]}" >> "$GITHUB_OUTPUT"
+          echo "Changed relevant files: ${#files[@]}"
+          printf '  - %s\n' "${files[@]}" || true
+ 
+      - name: Run DR scan (PR — changed files only)
+        if: github.event_name == 'pull_request'
+        run: |
+          python .github/skills/dr-code-remediation/scripts/dr_scan.py \
+            --changed-files-from changed_files.txt \
+            --root . \
+            --report-md  dr-report.md \
+            --report-json dr-report.json \
+            --fail-on critical
+ 
+      - name: Run DR scan (manual — full repo)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          python .github/skills/dr-code-remediation/scripts/dr_scan.py \
+            "${{ github.event.inputs.scan_path }}" \
+            --root . \
+            --report-md  dr-report.md \
+            --report-json dr-report.json \
+            --fail-on critical
+ 
+      - name: Publish job summary
+        if: always()
+        run: |
+          if [ -f dr-report.md ]; then
+            cat dr-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+ 
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dr-remediation-report
+          path: |
+            dr-report.md
+            dr-report.json
+          if-no-files-found: ignore
+ 
+      - name: Comment findings on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (!fs.existsSync('dr-report.md')) return;
+            const body = fs.readFileSync('dr-report.md', 'utf8');
+            const marker = '<!-- dr-code-remediation-report -->';
+            const {owner, repo} = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const {data: comments} = await github.rest.issues.listComments({owner, repo, issue_number, per_page: 100});
+            const existing = comments.find(c => c.user.type === 'Bot' && c.body && c.body.includes(marker));
+            const payload = `${marker}\n${body}`;
+            if (existing) {
+              await github.rest.issues.updateComment({owner, repo, comment_id: existing.id, body: payload});
+            } else {
+              await github.rest.issues.createComment({owner, repo, issue_number, body: payload});
+            }

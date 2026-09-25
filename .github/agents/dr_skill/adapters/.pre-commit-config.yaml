@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: dr-remediation-check
+        name: DR Compliance Scan & Auto-Remediate
+        entry: python .github/agents/dr_skill/adapters/run_adapter.py
+        language: python
+        types_or: [python, sql, shell, json]
+        pass_filenames: true
