@@ -8,7 +8,7 @@ shell files. Emits a Markdown report and a JSON summary. Exit codes:
     1  one or more critical findings
     2  scanner error (bad args, unreadable files, etc.)
  
-Standard library only. Rule IDs match .github/skills/dr-code-remediation/references/checklist.md.
+Standard library only. Rule IDs match .github/skills/dr_skill/references/checklist.md.
 """
 from __future__ import annotations
  

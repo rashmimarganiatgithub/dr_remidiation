@@ -18,11 +18,13 @@ permissions:
 concurrency:
   group: dr-remediation-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
- 
 jobs:
   dr-scan:
     name: Scan for DR blockers
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash # Directs GitHub to use Git Bash instead of PowerShell
     if: github.event.pull_request.draft != true
  
     steps:
@@ -38,8 +40,8 @@ jobs:
  
       - name: Verify scanner is present
         run: |
-          test -f .github/skills/dr-code-remediation/scripts/dr_scan.py \
-            || { echo "::error::DR scanner missing at .github/skills/dr-code-remediation/scripts/dr_scan.py"; exit 2; }
+          test -f .github/skills/dr_skill/scripts/dr_scan.py \
+            || { echo "::error::DR scanner missing at .github/skills/dr_skill/scripts/dr_scan.py"; exit 2; }
  
       - name: Compute changed files
         id: changed
@@ -59,7 +61,7 @@ jobs:
       - name: Run DR scan (PR — changed files only)
         if: github.event_name == 'pull_request'
         run: |
-          python .github/skills/dr-code-remediation/scripts/dr_scan.py \
+          python .github/skills/dr_skill/scripts/dr_scan.py \
             --changed-files-from changed_files.txt \
             --root . \
             --report-md  dr-report.md \
@@ -69,7 +71,7 @@ jobs:
       - name: Run DR scan (manual — full repo)
         if: github.event_name == 'workflow_dispatch'
         run: |
-          python .github/skills/dr-code-remediation/scripts/dr_scan.py \
+          python .github/skills/dr_skill/scripts/dr_scan.py \
             "${{ github.event.inputs.scan_path }}" \
             --root . \
             --report-md  dr-report.md \

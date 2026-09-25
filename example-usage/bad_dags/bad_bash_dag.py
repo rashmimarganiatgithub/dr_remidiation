@@ -16,4 +16,6 @@ with DAG('bash_deploy_dag', start_date=datetime(2026, 1, 1), schedule_interval='
                 --region us-central1 \
                 --project dmgcp-del-181
         """
+        LOCATION = "us-east1-a"
+        GCS_BUCKET = "gs://my-production-bucket-data1"
     )
